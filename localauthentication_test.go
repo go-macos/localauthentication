@@ -568,3 +568,44 @@ func TestKnownPoliciesAreAccepted(t *testing.T) {
 		}
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Gate
+// ---------------------------------------------------------------------------
+
+// TestGateSkipsWhenUnavailable: the convenience returns nil WITHOUT prompting
+// when the policy cannot be evaluated, so a person with no biometrics/passcode is
+// not locked out.
+func TestGateSkipsWhenUnavailable(t *testing.T) {
+	fc := &fakeContext{canOK: false, canCode: 1, canMessage: "no biometry"}
+	withFake(t, fc, nil, false)
+	if err := Gate(context.Background(), PolicyOwner, "unlock the vault"); err != nil {
+		t.Fatalf("Gate must return nil when the policy is unavailable, got %v", err)
+	}
+	if fc.lastReason != "" {
+		t.Fatal("Gate prompted despite the policy being unavailable")
+	}
+}
+
+// TestGateEvaluatesWhenAvailable: when the policy can be evaluated, Gate prompts
+// and returns nil on success.
+func TestGateEvaluatesWhenAvailable(t *testing.T) {
+	fc := &fakeContext{canOK: true, replyOK: true}
+	withFake(t, fc, nil, false)
+	if err := Gate(context.Background(), PolicyOwner, "unlock the vault"); err != nil {
+		t.Fatalf("Gate should return nil on a successful evaluation, got %v", err)
+	}
+	if fc.lastReason != "unlock the vault" {
+		t.Fatalf("Gate did not evaluate with the reason, lastReason=%q", fc.lastReason)
+	}
+}
+
+// TestGatePropagatesEvaluationFailure: an available policy that the person fails
+// or cancels surfaces the error.
+func TestGatePropagatesEvaluationFailure(t *testing.T) {
+	fc := &fakeContext{canOK: true, replyOK: false, replyCode: -128, replyMsg: "cancelled"}
+	withFake(t, fc, nil, false)
+	if err := Gate(context.Background(), PolicyOwner, "unlock the vault"); err == nil {
+		t.Fatal("Gate must return the error when an available policy is failed/cancelled")
+	}
+}

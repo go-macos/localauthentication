@@ -614,3 +614,25 @@ func Evaluate(ctx context.Context, policy Policy, reason string, opts ...Option)
 		return ctx.Err()
 	}
 }
+
+// Gate is the convenience an app reaches for when biometric unlock is a
+// CONVENIENCE, not a security boundary: it runs [Evaluate] for policy and reason
+// when the policy can be evaluated, and returns nil WITHOUT prompting when it
+// cannot — no enrolled biometrics and no passcode, an unbundled process, or a
+// non-darwin build. So a person who simply has no way to satisfy the check is
+// never locked out of their own app; the gate just isn't there for them.
+//
+// It returns nil when the person authenticated (or there was nothing to
+// authenticate against), and a [*Error] only when the policy WAS evaluable and
+// they failed or cancelled. A caller that must ENFORCE presence — refuse to
+// proceed when biometrics are absent — should call [Available] and [Evaluate]
+// itself and treat an unavailable policy as a hard stop.
+//
+// Like [Evaluate] it prompts and blocks: do not call it on a GUI program's main
+// thread.
+func Gate(ctx context.Context, policy Policy, reason string, opts ...Option) error {
+	if Available(policy) != nil {
+		return nil
+	}
+	return Evaluate(ctx, policy, reason, opts...)
+}
