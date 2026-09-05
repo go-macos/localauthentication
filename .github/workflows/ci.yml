@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.26.4'
+          go-version: '1.27.1'
       - name: gofmt
         run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
       - name: Vet
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.26.4'
+          go-version: '1.27.1'
       - name: Vet
         run: CGO_ENABLED=0 go vet ./...
       - name: Test (stub + portable logic)
@@ -68,7 +68,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.26.4'
+          go-version: '1.27.1'
       - name: Build stub
         run: go build ./...
         env:
@@ -99,7 +99,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.26.4'
+          go-version: '1.27.1'
       - name: Cross-compile (CGO=0)
         run: go build ./...
         env:
